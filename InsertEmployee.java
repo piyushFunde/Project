@@ -1,32 +1,44 @@
-package OOPS.Project;
+package OOPS;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import OOPS.Employee;
+import OOPS.DBhelper;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
-public class InsertEmployee {
-    public static void main(String[] args) {
-        String url = "jdbc:mysql://localhost:3306/my_company"; // ✅ your DB name
-        String user = "root"; // ✅ your MySQL username
-        String password = ""; // ✅ your MySQL password
-        try {
-            Connection conn = DriverManager.getConnection(url, user, password);
+public class EmployeeDAO {
+    
+    public boolean addEmployee(Employee emp) throws SQLException {
+        String query = "INSERT INTO employees (name, age, salary) VALUES (?, ?, ?)";
+        try (Connection conn = DBhelper.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, emp.getName());
+            ps.setInt(2, emp.getAge());
+            ps.setDouble(3, emp.getSalary());
+            return ps.executeUpdate() > 0;
+        }
+    }
 
-            String sql = "INSERT INTO employees (id, name, salary) VALUES (?, ?, ?)";
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setInt(1, 101);
-            stmt.setString(2, "Piyush");
-            stmt.setDouble(3, 50000);
-
-            int rowsInserted = stmt.executeUpdate();
-            if (rowsInserted > 0) {
-                System.out.println("Employee inserted successfully!");
+    public List<Employee> getAllEmployees() throws SQLException {
+        List<Employee> list = new ArrayList<>();
+        String query = "SELECT * FROM employees";
+        try (Connection conn = DBhelper.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(query)) {
+            while (rs.next()) {
+                list.add(new Employee(rs.getInt("id"), rs.getString("name"), 
+                                     rs.getInt("age"), rs.getDouble("salary")));
             }
+        }
+        return list;
+    }
 
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public boolean deleteEmployee(int id) throws SQLException {
+        String query = "DELETE FROM employees WHERE id = ?";
+        try (Connection conn = DBhelper.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
         }
     }
 }
